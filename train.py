@@ -90,7 +90,7 @@ with tf.Session() as sess:
 
         # validation
         for idx, (val_x, val_y, val_hole) in enumerate(DB.val_generator(128)):
-            _, loss_ = sess.run([train_op, losses], feed_dict={x:val_x, y:val_y, hole:val_hole})
+            loss_ = sess.run(losses, feed_dict={x:val_x, y:val_y, hole:val_hole})
             val_loss += loss_
 
         # train/val loss 출력
