@@ -95,7 +95,7 @@ with tf.Session() as sess:
 
         # train/val loss 출력
         print('step: {}, train_loss: {}, val_loss: {}'.format(
-            step, str(train_loss/DB.train_len())[:5], str(train_loss/DB.val_len())[:5]))
+            step, str(train_loss/DB.train_len())[:5], str(val_loss/DB.val_len())[:5]))
 
         # 모델 저장 시 사용
         #saver.save(sess, "./checkpoints/baseline", global_step=step)
