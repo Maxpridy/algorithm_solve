@@ -13,3 +13,23 @@ def fc_layer(x, shape, name, initializer=tf.keras.initializers.he_normal(), acti
     if dropout is not None:
         fc = tf.nn.dropout(fc, dropout)
     return fc
+
+def embedding(x, class_number, embedding_size, name):
+    embedding_weight = tf.get_variable(name, [class_number, embedding_size])
+    embedded_x = tf.nn.embedding_lookup(embedding_weight, x)  # (batch, 200, 8)
+    return embedded_x
+
+def blstm(x, n_hidden, name, keep_prob=0.4):
+    with tf.name_scope(name) as scope:
+        lstm_fw_cell = tf.nn.rnn_cell.LSTMCell(num_units=n_hidden, state_is_tuple=True)
+        lstm_fw_cell = tf.nn.rnn_cell.DropoutWrapper(lstm_fw_cell, output_keep_prob=keep_prob)
+
+        lstm_bw_cell = tf.nn.rnn_cell.LSTMCell(num_units=n_hidden, state_is_tuple=True)
+        lstm_bw_cell = tf.nn.rnn_cell.DropoutWrapper(lstm_bw_cell, output_keep_prob=keep_prob)
+
+        outputs, _ = tf.nn.bidirectional_dynamic_rnn(lstm_fw_cell, lstm_bw_cell, x, dtype=tf.float32)
+        outputs_fw = tf.transpose(outputs[0], [1, 0, 2])
+        outputs_bw = tf.transpose(outputs[1], [1, 0, 2])
+        outputs_concat = tf.concat([outputs_fw[-1], outputs_bw[-1]], axis=1) # (batch_size, n_hidden*2)
+
+        return outputs_concat

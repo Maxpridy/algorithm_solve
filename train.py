@@ -13,7 +13,7 @@ steps = 5
 DB = SamsungDB(mode='train')
 test_DB = SamsungDB(mode='test')
 
-x = tf.placeholder(tf.float64, [None, 16], 'input')
+x = tf.placeholder(tf.int32, [None, 16], 'input')
 y = tf.placeholder(tf.int32, [None, 16], 'label')
 hole = tf.placeholder(tf.float64, [None, 16], 'hole')
 
@@ -21,10 +21,55 @@ detail_y = []
 for i in range(16):
     detail_y.append(y[:, i])
 
-model = models.baseline()
+#model = models.baseline()
+model = models.baseline_dh()
 
 y_preds = model.predict(x)
 #y_preds = tf.identity(y_preds, 'outputs') # 이름 붙이기
+
+def get_accuracy(result, val_y, val_hole):
+    preds = []
+    labels = [[] for _ in range(128)]  # labels.shape: (50, 12)
+    try:
+        for i, values in enumerate(result[0]):
+            for j, v in enumerate(values):
+                labels[j].append(v)
+        for i, label in enumerate(labels):
+            pred = []
+            for j in range(0, 2):
+                if val_hole[i][j] == 0:
+                    pred.append(val_y[i][j])
+                else:
+                    pred.append(np.argmax(label[j]))
+            for j, v in enumerate(label[2]):
+                if val_hole[i][j + 2] == 0:
+                    pred.append(val_y[i][j + 2])
+                else:
+                    pred.append(int(v) if v > 0 else 0)
+            for j in range(3, 12):
+                if val_hole[i][j + 4] == 0:
+                    pred.append(val_y[i][j + 4])  # reg 부분이 생략되어서 n2c[j-1] 사용
+                else:
+                    pred.append(np.argmax(label[j]))
+            preds.append(pred)
+
+        hole_count = [0 for _ in range(16)]
+        correct_count = [0 for _ in range(16)]
+        for a, b, h in zip(preds, val_y, val_hole):
+            for i in range(16):
+                if h[i] == 1:
+                    hole_count[i] += 1
+                    if a[i] == b[i]:
+                        correct_count[i] += 1
+
+        # print(hole_count)
+        # print(correct_count)
+
+    except:
+        hole_count = [0 for _ in range(16)]
+        correct_count = [0 for _ in range(16)]
+
+    return hole_count, correct_count
 
 def get_losses(y, y_pred, hole, weight=16/3.):
     losses = []
@@ -89,9 +134,22 @@ with tf.Session() as sess:
             train_loss += loss_
 
         # validation
+        #for idx, (val_x, val_y, val_hole) in enumerate(DB.val_generator(128)):
+        #    loss_ = sess.run(losses, feed_dict={x:val_x, y:val_y, hole:val_hole})
+        #    val_loss += loss_
+        # validation (상준이형 코드)
+        _hole = np.array([0 for _ in range(16)])
+        _correct = np.array([0 for _ in range(16)])
         for idx, (val_x, val_y, val_hole) in enumerate(DB.val_generator(128)):
-            loss_ = sess.run(losses, feed_dict={x:val_x, y:val_y, hole:val_hole})
+            result = sess.run([y_preds], feed_dict={x: val_x})
+            hole_count, correct_count = get_accuracy(result, val_y, val_hole)
+            _hole += hole_count
+            _correct += correct_count
+
+            loss_ = sess.run(losses, feed_dict={x: val_x, y: val_y, hole: val_hole})
             val_loss += loss_
+
+        print(_correct / _hole)
 
         # train/val loss 출력
         print('step: {}, train_loss: {}, val_loss: {}'.format(
@@ -132,3 +190,4 @@ with tf.Session() as sess:
     with open('./data/output_e' + str(steps) + '.csv', 'w', newline='') as csvfile:
         spamwriter = csv.writer(csvfile)
         spamwriter.writerows(preds)
+
