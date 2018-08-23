@@ -6,7 +6,7 @@ import os
 import json
 from source.util import get_label
 
-def generate_DB(newDataPath=None, rawDataPath=None, sample_for_line=100, hole_value=-1):
+def generate_DB(newDataPath=None, rawDataPath=None, sample_for_line=50, hole_value=-1):
     if rawDataPath is None:
         rawDataPath = '../../data/16col_original_25000line_trainset.csv'
     if newDataPath is None:
