@@ -1,5 +1,6 @@
 import json
 import numpy as np
+import random
 
 class SamsungDB:
     def __init__(self, mode='train', db_path='./data/samsung_db.npy', test_db_path='./data/samsung_test_db.npy', val_rate=0.2):
@@ -85,3 +86,10 @@ class SamsungDB:
                 hole_matrix.append([1 if i in h else 0 for i in range(16)])
 
             yield x, None, hole_matrix
+
+    def shuffle_train_set(self):
+        n_train = self.train_len()
+        idxs = list(range(n_train))
+        random.shuffle(idxs)
+        self.train_data = self.train_data[idxs]
+        self.train_hole = self.train_hole[idxs]
