@@ -6,7 +6,7 @@ import os
 import json
 from source.util import get_label
 
-def generate_DB(newDataPath=None, rawDataPath=None, sample_for_line=10, hole_value=-1):
+def generate_DB(newDataPath=None, rawDataPath=None, sample_for_line=100, hole_value=-1):
     if rawDataPath is None:
         rawDataPath = '../../data/16col_original_25000line_trainset.csv'
     if newDataPath is None:
@@ -44,10 +44,11 @@ def generate_DB(newDataPath=None, rawDataPath=None, sample_for_line=10, hole_val
     random.shuffle(shuffle_index)
     raw = np.array(raw)[shuffle_index] # 데이터 섞기
     hole = np.array(hole)[shuffle_index]
+    print('data_len:', len(raw))
     np.save(newDataPath, {'data':raw, 'hole':hole})
     print('data save: {}'.format(newDataPath + '.npy'))
 
-def generate_test_DB(newDataPath=None, rawDataPath=None):
+def generate_testDB(newDataPath=None, rawDataPath=None):
     if rawDataPath is None:
         rawDataPath = '../../data/test_kor.csv'
     if newDataPath is None:
@@ -92,9 +93,11 @@ def generate_test_DB(newDataPath=None, rawDataPath=None):
                         line[idx] = l2n_idx[idx][element]
             hole.append(list(candidate)) # 어디에 뚤렸는지 명시
             raw.append(line) # 데이터 추가
+    print('data_len:', len(raw))
     np.save(newDataPath, {'data': raw, 'hole':hole})
     print('data save: {}'.format(newDataPath + '.npy'))
 
+
 if __name__ == '__main__':
     generate_DB()
-    generate_test_DB()
+    generate_testDB()
